@@ -66,11 +66,24 @@ all: compile
 ss:
 	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -a
 
+sss-%:
+	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 add_kernel$*.llir -filetype=asm -o add_kernel$*.s
+
 sss:
 	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -sink
 
 s:
 	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE)
+
+o-%:
+	$(CXX) --target=riscv64-unknown-linux-gnu $(ARCH) -fPIC \
+  -c add_kernel$*.s -o add_kernel$*.o
+	$(CXX) \
+  --target=riscv64-unknown-linux-gnu -march=rv64gcv \
+  --sysroot=$(HOME)/toolchain/sysroot \
+  --gcc-toolchain=$(HOME)/toolchain \
+  -fPIC -shared \
+  add_kernel$*.o -o libadd_kernel$*.so
 
 o:
 	$(CXX) --target=riscv64-unknown-linux-gnu $(ARCH) -fPIC \
@@ -139,6 +152,15 @@ foo:
   -fPIC -shared \
   foo.c -o libfoo.so
 
+m-%:
+	$(CXX) \
+  -O3 \
+  --target=riscv64-unknown-linux-gnu -march=rv64gcv \
+  --sysroot=$(HOME)/toolchain/sysroot \
+  --gcc-toolchain=$(HOME)/toolchain \
+  -fPIC \
+  -c main_1e$*.c -o main_1e$*.o
+
 main:
 	$(CXX) \
   -O3 \
@@ -148,6 +170,19 @@ main:
   -fPIC \
   -c $(MIN) -o main.o
 #  -I . \
+
+e-%:
+	$(eval KERNEL=$(word 2,$(subst -, ,$*)))
+	$(eval SIZE=$(word 1,$(subst -, ,$*)))
+	$(CXX) \
+  --target=riscv64-unknown-linux-gnu $(ARCH) \
+  --sysroot=$(HOME)/toolchain/sysroot \
+  --gcc-toolchain=$(HOME)/toolchain \
+  -fuse-ld=$(HOME)/toolchain/bin/riscv64-unknown-linux-gnu-ld \
+  -fPIC \
+  -L . \
+  -Wl,-rpath,'$$ORIGIN' \
+  main_1e$(SIZE).o -ladd_kernel$(KERNEL) -o main_1e$*.out
 
 main3:
 	`~/llvm-project/install/bin/llvm-config --bindir`/clang \
