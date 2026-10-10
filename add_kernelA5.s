@@ -15,127 +15,196 @@ add_kernel:                             # @add_kernel
 	addi	sp, sp, -16
 	.cfi_def_cfa_offset 16
 	csrr	a5, vlenb
-	li	a6, 24
+	li	a6, 28
 	mul	a5, a5, a6
 	sub	sp, sp, a5
-	.cfi_escape 0x0f, 0x0d, 0x72, 0x00, 0x11, 0x10, 0x22, 0x11, 0x18, 0x92, 0xa2, 0x38, 0x00, 0x1e, 0x22 # sp + 16 + 24 * vlenb
+	.cfi_escape 0x0f, 0x0d, 0x72, 0x00, 0x11, 0x10, 0x22, 0x11, 0x1c, 0x92, 0xa2, 0x38, 0x00, 0x1e, 0x22 # sp + 16 + 28 * vlenb
 .Ltmp0:
 	.loc	1 49 24 prologue_end            # 01-vector-add.py:49:24
-	slliw	a4, a4, 7
-	li	a5, 32
-	li	a6, 96
+	slliw	a5, a4, 7
+	li	a6, 32
+	li	a7, 96
 	.loc	1 50 28                         # 01-vector-add.py:50:28
-	vsetvli	zero, a5, e32, m8, ta, mu
+	vsetvli	zero, a6, e32, m8, ta, mu
 	vid.v	v8
-	li	a7, 64
+	li	t0, 64
 	.loc	1 55 24                         # 01-vector-add.py:55:24
-	slli	t0, a4, 2
+	slli	a4, a5, 2
 	.loc	1 50 28                         # 01-vector-add.py:50:28
-	vor.vx	v8, v8, a4
+	vor.vx	v8, v8, a5
+	vadd.vx	v16, v8, t0
+	.loc	1 52 21                         # 01-vector-add.py:52:21
+	vmslt.vx	v5, v8, a3
+	csrr	a5, vlenb
+	slli	a5, a5, 1
+	add	a5, sp, a5
+	addi	a5, a5, 16
+	vs1r.v	v5, (a5)                        # vscale x 8-byte Folded Spill
+	vmslt.vx	v7, v16, a3
+	csrr	a5, vlenb
+	li	t0, 27
+	mul	a5, a5, t0
+	add	a5, sp, a5
+	addi	a5, a5, 16
+	vs1r.v	v7, (a5)                        # vscale x 8-byte Folded Spill
+	.loc	1 55 24                         # 01-vector-add.py:55:24
+	add	a0, a0, a4
+	.loc	1 50 28                         # 01-vector-add.py:50:28
 	vadd.vx	v16, v8, a7
 	.loc	1 52 21                         # 01-vector-add.py:52:21
-	vmslt.vx	v7, v8, a3
-	vmslt.vx	v6, v16, a3
-	.loc	1 55 24                         # 01-vector-add.py:55:24
-	add	a0, a0, t0
-	.loc	1 50 28                         # 01-vector-add.py:50:28
-	vadd.vx	v16, v8, a6
-	.loc	1 52 21                         # 01-vector-add.py:52:21
-	vmslt.vx	v5, v16, a3
-	.loc	1 50 28                         # 01-vector-add.py:50:28
-	vadd.vx	v8, v8, a5
-	.loc	1 52 21                         # 01-vector-add.py:52:21
-	vmslt.vx	v4, v8, a3
+	vmslt.vx	v4, v16, a3
 	.loc	1 55 16                         # 01-vector-add.py:55:16
-	addi	a3, a0, 384
-	addi	a4, a0, 256
-	vmv1r.v	v0, v7
+	vmv.v.i	v16, 0
+	.loc	1 50 28                         # 01-vector-add.py:50:28
+	vadd.vx	v8, v8, a6
+	.loc	1 52 21                         # 01-vector-add.py:52:21
+	vmslt.vx	v6, v8, a3
+	addi	a3, sp, 16
+	vs1r.v	v6, (a3)                        # vscale x 8-byte Folded Spill
+	.loc	1 55 16                         # 01-vector-add.py:55:16
 	vmv.v.i	v8, 0
-	vle32.v	v8, (a0), v0.t
+	addi	a3, a0, 384
+	addi	a5, a0, 256
+	vmv1r.v	v0, v5
+	vle32.v	v16, (a0), v0.t
+	csrr	a6, vlenb
+	slli	a7, a6, 1
+	add	a6, a7, a6
+	add	a6, sp, a6
+	addi	a6, a6, 16
+	vs8r.v	v16, (a6)                       # vscale x 64-byte Folded Spill
+	vmv1r.v	v0, v4
+	csrr	a6, vlenb
+	add	a6, sp, a6
+	addi	a6, a6, 16
+	vs1r.v	v4, (a6)                        # vscale x 8-byte Folded Spill
+	vle32.v	v8, (a3), v0.t
+	csrr	a3, vlenb
+	li	a6, 11
+	mul	a3, a3, a6
+	add	a3, sp, a3
+	addi	a3, a3, 16
+	vs8r.v	v8, (a3)                        # vscale x 64-byte Folded Spill
+	vmv.v.i	v24, 0
+	vmv1r.v	v0, v7
+	vle32.v	v24, (a5), v0.t
 	addi	a0, a0, 128
+	vmv.v.i	v8, 0
+	vmv1r.v	v0, v6
+	vle32.v	v8, (a0), v0.t
+	csrr	a0, vlenb
+	li	a3, 19
+	mul	a0, a0, a3
+	add	a0, sp, a0
+	addi	a0, a0, 16
+	vs8r.v	v8, (a0)                        # vscale x 64-byte Folded Spill
+	.loc	1 56 24                         # 01-vector-add.py:56:24
+	add	a1, a1, a4
+	.loc	1 56 16 is_stmt 0               # 01-vector-add.py:56:16
+	vmv.v.i	v8, 0
+	vmv1r.v	v0, v5
+	vle32.v	v8, (a1), v0.t
+	addi	a0, a1, 384
 	vmv.v.i	v16, 0
 	vmv1r.v	v0, v4
 	vle32.v	v16, (a0), v0.t
 	csrr	a0, vlenb
-	slli	a0, a0, 4
+	slli	a3, a0, 1
+	add	a0, a3, a0
+	add	a0, sp, a0
+	addi	a0, a0, 16
+	vl8r.v	v0, (a0)                        # vscale x 64-byte Folded Reload
+	.loc	1 57 17 is_stmt 1               # 01-vector-add.py:57:17
+	vfadd.vv	v8, v0, v8
+	csrr	a0, vlenb
+	slli	a3, a0, 1
+	add	a0, a3, a0
+	add	a0, sp, a0
+	addi	a0, a0, 16
+	vs8r.v	v8, (a0)                        # vscale x 64-byte Folded Spill
+	.loc	1 56 16                         # 01-vector-add.py:56:16
+	addi	a0, a1, 256
+	vmv.v.i	v8, 0
+	csrr	a3, vlenb
+	li	a5, 27
+	mul	a3, a3, a5
+	add	a3, sp, a3
+	addi	a3, a3, 16
+	vl1r.v	v0, (a3)                        # vscale x 8-byte Folded Reload
+	vle32.v	v8, (a0), v0.t
+	csrr	a0, vlenb
+	li	a3, 11
+	mul	a0, a0, a3
+	add	a0, sp, a0
+	addi	a0, a0, 16
+	vl8r.v	v0, (a0)                        # vscale x 64-byte Folded Reload
+	.loc	1 57 17                         # 01-vector-add.py:57:17
+	vfadd.vv	v16, v0, v16
+	csrr	a0, vlenb
+	li	a3, 11
+	mul	a0, a0, a3
 	add	a0, sp, a0
 	addi	a0, a0, 16
 	vs8r.v	v16, (a0)                       # vscale x 64-byte Folded Spill
-	.loc	1 56 24                         # 01-vector-add.py:56:24
-	add	a1, a1, t0
-	.loc	1 56 16 is_stmt 0               # 01-vector-add.py:56:16
-	vmv.v.i	v24, 0
-	vmv1r.v	v0, v7
-	vle32.v	v24, (a1), v0.t
-	addi	a0, a1, 384
-	.loc	1 57 17 is_stmt 1               # 01-vector-add.py:57:17
-	vfadd.vv	v8, v8, v24
-	csrr	a5, vlenb
-	slli	a5, a5, 3
-	add	a5, sp, a5
-	addi	a5, a5, 16
-	vs8r.v	v8, (a5)                        # vscale x 64-byte Folded Spill
-	.loc	1 56 16                         # 01-vector-add.py:56:16
-	addi	a5, a1, 256
-	.loc	1 55 16                         # 01-vector-add.py:55:16
-	vmv.v.i	v8, 0
-	vmv1r.v	v0, v5
-	vle32.v	v8, (a3), v0.t
-	.loc	1 56 16                         # 01-vector-add.py:56:16
-	vmv.v.i	v24, 0
-	vle32.v	v24, (a0), v0.t
-	.loc	1 57 17                         # 01-vector-add.py:57:17
-	vfadd.vv	v8, v8, v24
-	addi	a0, sp, 16
-	vs8r.v	v8, (a0)                        # vscale x 64-byte Folded Spill
 	.loc	1 56 16                         # 01-vector-add.py:56:16
 	addi	a0, a1, 128
-	vmv1r.v	v0, v4
-	.loc	1 55 16                         # 01-vector-add.py:55:16
-	vmv.v.i	v16, 0
-	.loc	1 56 16                         # 01-vector-add.py:56:16
-	vle32.v	v16, (a0), v0.t
-	.loc	1 55 16                         # 01-vector-add.py:55:16
-	vmv.v.i	v24, 0
-	vmv1r.v	v0, v6
-	vle32.v	v24, (a4), v0.t
-	.loc	1 56 16                         # 01-vector-add.py:56:16
-	vmv.v.i	v8, 0
-	vle32.v	v8, (a5), v0.t
-	.loc	1 57 17                         # 01-vector-add.py:57:17
-	vfadd.vv	v24, v24, v8
-	.loc	1 59 26                         # 01-vector-add.py:59:26
-	add	a2, a2, t0
-	.loc	1 59 35 is_stmt 0               # 01-vector-add.py:59:35
+	addi	a1, sp, 16
+	vl1r.v	v7, (a1)                        # vscale x 8-byte Folded Reload
 	vmv1r.v	v0, v7
+	vmv.v.i	v16, 0
+	vle32.v	v16, (a0), v0.t
+	.loc	1 57 17                         # 01-vector-add.py:57:17
+	vfadd.vv	v8, v24, v8
+	.loc	1 59 26                         # 01-vector-add.py:59:26
+	add	a2, a2, a4
 	csrr	a0, vlenb
-	slli	a0, a0, 3
+	slli	a0, a0, 1
 	add	a0, sp, a0
 	addi	a0, a0, 16
-	vl8r.v	v8, (a0)                        # vscale x 64-byte Folded Reload
-	vse32.v	v8, (a2), v0.t
+	vl1r.v	v0, (a0)                        # vscale x 8-byte Folded Reload
 	csrr	a0, vlenb
-	slli	a0, a0, 4
+	slli	a1, a0, 1
+	add	a0, a1, a0
 	add	a0, sp, a0
 	addi	a0, a0, 16
-	vl8r.v	v8, (a0)                        # vscale x 64-byte Folded Reload
+	vl8r.v	v24, (a0)                       # vscale x 64-byte Folded Reload
+	.loc	1 59 35 is_stmt 0               # 01-vector-add.py:59:35
+	vse32.v	v24, (a2), v0.t
+	csrr	a0, vlenb
+	li	a1, 19
+	mul	a0, a0, a1
+	add	a0, sp, a0
+	addi	a0, a0, 16
+	vl8r.v	v24, (a0)                       # vscale x 64-byte Folded Reload
 	.loc	1 57 17 is_stmt 1               # 01-vector-add.py:57:17
-	vfadd.vv	v8, v8, v16
+	vfadd.vv	v16, v24, v16
 	.loc	1 59 35                         # 01-vector-add.py:59:35
 	addi	a0, a2, 384
-	vmv1r.v	v0, v5
-	addi	a1, sp, 16
-	vl8r.v	v16, (a1)                       # vscale x 64-byte Folded Reload
-	vse32.v	v16, (a0), v0.t
-	addi	a0, a2, 256
-	vmv1r.v	v0, v6
+	csrr	a1, vlenb
+	add	a1, sp, a1
+	addi	a1, a1, 16
+	vl1r.v	v0, (a1)                        # vscale x 8-byte Folded Reload
+	csrr	a1, vlenb
+	li	a3, 11
+	mul	a1, a1, a3
+	add	a1, sp, a1
+	addi	a1, a1, 16
+	vl8r.v	v24, (a1)                       # vscale x 64-byte Folded Reload
 	vse32.v	v24, (a0), v0.t
-	addi	a0, a2, 128
-	vmv1r.v	v0, v4
+	addi	a0, a2, 256
+	csrr	a1, vlenb
+	li	a3, 27
+	mul	a1, a1, a3
+	add	a1, sp, a1
+	addi	a1, a1, 16
+	vl1r.v	v0, (a1)                        # vscale x 8-byte Folded Reload
 	vse32.v	v8, (a0), v0.t
+	addi	a0, a2, 128
+	vmv1r.v	v0, v7
+	vse32.v	v16, (a0), v0.t
 	.loc	1 59 4 epilogue_begin is_stmt 0 # 01-vector-add.py:59:4
 	csrr	a0, vlenb
-	li	a1, 24
+	li	a1, 28
 	mul	a0, a0, a1
 	add	sp, sp, a0
 	.cfi_def_cfa sp, 16

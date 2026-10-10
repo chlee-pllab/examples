@@ -22,8 +22,9 @@ GCC_TOOLCHAIN := --gcc-toolchain=$(HOME)/toolchain
 ARCH := -march=rv64gcv
 
 SRC := add_kernel.c
+#SRC := _layer_norm_fwd_fused
 #SRC := test2.c
-#SRC := gemv_kernel.c
+NAME := $(SRC:_kernelA.c=)
 MIN := $(SRC:_kernel.c=_min.c)
 MAIN := $(SRC:_kernel.c=_main3.c)
 LLIR_FILE = $(SRC:.c=.llir)
@@ -64,26 +65,43 @@ SFLAGS := --riscv-disable-using-constant-pool-for-large-ints --riscv-use-remater
 all: compile
 
 ss:
-	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -a
+	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) --custom-a --debug-only=expandpseudos
 
 sss-%:
-	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 add_kernel$*.llir -filetype=asm -o add_kernel$*.s
+	$(eval KERNEL=$(word 2,$(subst -, ,$*)))
+	$(eval SIZE=$(word 1,$(subst -, ,$*)))
+	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(NAME)_1e$(SIZE)-$(KERNEL).llir -filetype=asm -o $(NAME)_1e$(SIZE)-$(KERNEL).s -sink -a
 
 sss:
-	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -sink
+	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) --custom-sink --debug-only=expandpseudos
 
 s:
 	$(LLC) -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE)
 
 o-%:
+	$(eval KERNEL=$(word 2,$(subst -, ,$*)))
+	$(eval SIZE=$(word 1,$(subst -, ,$*)))
 	$(CXX) --target=riscv64-unknown-linux-gnu $(ARCH) -fPIC \
-  -c add_kernel$*.s -o add_kernel$*.o
+  -c $(NAME)_1e$(SIZE)-$(KERNEL).s -o $(NAME)_1e$(SIZE)-$(KERNEL).o
 	$(CXX) \
   --target=riscv64-unknown-linux-gnu -march=rv64gcv \
   --sysroot=$(HOME)/toolchain/sysroot \
   --gcc-toolchain=$(HOME)/toolchain \
   -fPIC -shared \
-  add_kernel$*.o -o libadd_kernel$*.so
+  $(NAME)_1e$(SIZE)-$(KERNEL).o -o lib$(NAME)_1e$(SIZE)-$(KERNEL).so
+
+e-%:
+	$(eval KERNEL=$(word 2,$(subst -, ,$*)))
+	$(eval SIZE=$(word 1,$(subst -, ,$*)))
+	$(CXX) \
+  --target=riscv64-unknown-linux-gnu $(ARCH) \
+  --sysroot=$(HOME)/toolchain/sysroot \
+  --gcc-toolchain=$(HOME)/toolchain \
+  -fuse-ld=$(HOME)/toolchain/bin/riscv64-unknown-linux-gnu-ld \
+  -fPIC \
+  -L . \
+  -Wl,-rpath,'$$ORIGIN' \
+  main_1e$(SIZE).o -l$(NAME)_1e$(SIZE)-$(KERNEL) -lm -o main_1e$*.out
 
 o:
 	$(CXX) --target=riscv64-unknown-linux-gnu $(ARCH) -fPIC \
@@ -159,7 +177,7 @@ m-%:
   --sysroot=$(HOME)/toolchain/sysroot \
   --gcc-toolchain=$(HOME)/toolchain \
   -fPIC \
-  -c main_1e$*.c -o main_1e$*.o
+  -c $(NAME)_main_1e$*.c -o main_1e$*.o
 
 main:
 	$(CXX) \
@@ -170,19 +188,6 @@ main:
   -fPIC \
   -c $(MIN) -o main.o
 #  -I . \
-
-e-%:
-	$(eval KERNEL=$(word 2,$(subst -, ,$*)))
-	$(eval SIZE=$(word 1,$(subst -, ,$*)))
-	$(CXX) \
-  --target=riscv64-unknown-linux-gnu $(ARCH) \
-  --sysroot=$(HOME)/toolchain/sysroot \
-  --gcc-toolchain=$(HOME)/toolchain \
-  -fuse-ld=$(HOME)/toolchain/bin/riscv64-unknown-linux-gnu-ld \
-  -fPIC \
-  -L . \
-  -Wl,-rpath,'$$ORIGIN' \
-  main_1e$(SIZE).o -ladd_kernel$(KERNEL) -o main_1e$*.out
 
 main3:
 	`~/llvm-project/install/bin/llvm-config --bindir`/clang \
@@ -214,7 +219,7 @@ t:
 	$(LLC) -stop-after=stack-slot-coloring -debug-only=expandpseudos -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -o $(MR_FILE) -sink
 
 isa:
-	$(LLC) -stop-after=expandpseudos -debug-only=expandpseudos -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -stats -sink
+	$(LLC) -stop-after=expandpseudos -debug-only=expandpseudos -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -stats -a
 
 i:
 	$(LLC) -debug-only=expandpseudos -mattr=+m,+f,+d,+v -disable-lsr -relocation-model=pic -riscv-v-vector-bits-min=128 $(LLIR_FILE) -filetype=asm -o $(S_FILE) -stats -sink
@@ -241,4 +246,5 @@ opt:
 #$(OPT) -passes=mem2reg $(IR_FILE) | $(DIS) -o $(OPT_FILE)
 
 clean:
-	rm -f $(IR_FILE) $(MR_FILE)
+	rm -f *.o *.so *.out
+#rm -f $(IR_FILE) $(MR_FILE)

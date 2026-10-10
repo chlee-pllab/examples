@@ -28,13 +28,13 @@ int main() {
   bool correct = true;
   for (int i = 0; i < size; ++i) {
     if (i < n_elements) {
-      printf("  output[%d]=%f, %f\n", i, x[i] + y[i], output[i]);
+      //printf("  output[%d]=%f, %f\n", i, x[i] + y[i], output[i]);
       if (fabs(output[i] - (x[i] + y[i])) > 1e-4) {
         correct = false;
       }
     }
     else {
-      printf("  output[%d]=%f, %f\n", i, 0.0, output[i]);
+      //printf("  output[%d]=%f, %f\n", i, 0.0, output[i]);
       if (fabs(output[i]) > 1e-4) {
         correct = false;
       }

@@ -6,7 +6,7 @@ os.environ['LD_LIBRARY_PATH'] = '/usr/local/lib:/usr/lib'
 
 BLOCK_SIZE = 128
 
-lib = ctypes.CDLL('./add_kernel.so')
+lib = ctypes.CDLL('./libadd_kernelB.so')
 kernel = lib.add_kernel
 kernel.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int32, ctypes.c_int32]
 

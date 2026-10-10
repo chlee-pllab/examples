@@ -29,13 +29,13 @@ int main() {
   for (int i = 0; i < num_blocks; ++i) {
     add_kernel(x, y, output, size, i);
   }
-  bool correct = true;
+  /*bool correct = true;
   for (int i = 0; i < size; ++i) {
     //printf("  output[%d]=%f, %f\n", i, output[i], x[i] + y[i]);
     if (fabs(output[i] - (x[i] + y[i])) > 1e-4) {
       correct = false;
     }
   }
-  printf("Size %d: %s\n", size, correct ? "PASS" : "FAIL");
+  printf("Size %d: %s\n", size, correct ? "PASS" : "FAIL");*/
   return 0;
 }

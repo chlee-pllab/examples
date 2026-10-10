@@ -1,36 +1,17 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <math.h>
-
-#define BLOCK_SIZE 128
-#define size 100000
-
-void add_kernel(void*, void*, void*, int32_t, int32_t);
-
-void add(float *restrict x, float *restrict y, float *restrict output) {
-  int num_blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
-
-  for (int i = 0; i < num_blocks; ++i) {
-    add_kernel(x, y, output, size, i);
-  }
-
-  bool correct = true;
-  for (int i = 0; i < size; ++i) {
-    if (fabs(output[i] - (x[i] + y[i])) > 1e-9) {
-      correct = false;
-    }
-  }
-  printf("Size %d: %s\n", size, correct ? "PASS" : "FAIL");
-}
+#include <time.h>
+#include <riscv_vector.h>
+#include "foo.h"
 int main() {
-  srand(0);
-  float x[size], y[size], output[size];
-  for (int i = 0; i < size; ++i) {
-    x[i] = (float)rand() / (float)RAND_MAX;
-    y[i] = (float)rand() / (float)RAND_MAX;
-    output[i] = 0;
+  float a[12000], b[12000], c[12000];
+  for (int i = 0; i < 12000; ++i) {
+    a[i] = i;
+    b[i] = 1+2*i;
+    c[i] = 0;
   }
-  add(x, y, output);
+  foo(a,b,c);
+  printf("Output: %f %f %f %f %f\n", c[0], c[1], c[2], c[3], c[4]);
   return 0;
 }
